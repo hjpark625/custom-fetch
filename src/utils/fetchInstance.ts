@@ -130,6 +130,7 @@ class FetchInstance {
     return combinedOptions;
   }
 
+  // TODO: 여기 커링함수로 클래스 내에서 어떻게 구현할지 각 잡아보기
   private async fetching(endPoint: string, options: FetchOptions) {
     const combinedOptions = this.makeOptions(options);
     const url = this.makeUrl(endPoint, combinedOptions.params);
