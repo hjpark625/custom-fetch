@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import { notFound } from 'next/navigation';
 import FetchInstance, { ClientRequestError, ServerInternalError } from './fetchInstance';
 import Rollbar from 'rollbar';
@@ -18,6 +18,30 @@ const detailInstance = axios.create({
     'Content-Type': 'application/json'
   }
 });
+
+detailInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.log(error);
+    if (isAxiosError(error)) {
+      if (error.response?.status === 404) {
+        window.Rollbar.warning(error.message, error, {
+          request: error.config,
+          response: error.response
+        });
+        notFound();
+      }
+      if (error.response?.status === 500) {
+        window.Rollbar.error(error.message, error, {
+          request: error.config,
+          response: error.response
+        });
+        throw error;
+      }
+    }
+  }
+);
+
 const Fetch = new FetchInstance({
   baseUrl: 'http://localhost:4000/detail',
   interceptors: {
@@ -25,12 +49,9 @@ const Fetch = new FetchInstance({
       return config;
     },
     onResponse: async (response) => {
-      console.log(response);
       return response;
     },
     onResponseError: async (error) => {
-      console.log('??');
-
       if (error instanceof ClientRequestError) {
         rollbar.warning(error.message, error, {
           request: error.request,
@@ -52,7 +73,6 @@ const Fetch = new FetchInstance({
       throw error;
     },
     onRequestError: (reason) => {
-      console.log(reason);
       throw reason;
     }
   }

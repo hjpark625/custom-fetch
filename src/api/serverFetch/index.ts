@@ -21,7 +21,6 @@ const customFetch = new FetchInstance({
       return config;
     },
     onResponse: async (response) => {
-      console.log(response);
       return response;
     },
     onResponseError: async (error) => {
@@ -45,7 +44,6 @@ const customFetch = new FetchInstance({
       throw error;
     },
     onRequestError: (reason) => {
-      console.log(reason);
       throw reason;
     }
   }

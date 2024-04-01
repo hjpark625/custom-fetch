@@ -2,11 +2,11 @@ import Link from 'next/link';
 import { headers } from 'next/headers';
 
 export default function NotFoundPage() {
-  const headersList = headers();
-  const domain = headersList.get('host');
-  headersList.forEach((value, key) => {
-    console.log(`${key}: ${value}`);
-  });
+  // const headersList = headers();
+  // const domain = headersList.get('host');
+  // headersList.forEach((value, key) => {
+  //   console.log(`${key}: ${value}`);
+  // });
   return (
     <div>
       <h1>404 NOT FOUND</h1>

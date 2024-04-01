@@ -1,17 +1,7 @@
 import 'server-only';
 import { ApiError } from 'next/dist/server/api-utils';
-import Rollbar from 'rollbar';
-import packageJson from '../../package.json';
 
 const NO_RESPONSE_ERR_MSG = '응답이 없습니다. 네트워크 문제 또는 요청 오류가 있을 수 있습니다.';
-
-const rollbar = new Rollbar({
-  accessToken: process.env.NEXT_PUBLIC_ROLLBAR_SERVER_TOKEN,
-  captureUncaught: true,
-  captureUnhandledRejections: true,
-  environment: process.env.NODE_ENV === 'development' ? 'local' : 'prod',
-  code_version: packageJson.version
-});
 
 interface Interceptor {
   // 응답 요청 전에 config를 가로채서 수정을 한다.
