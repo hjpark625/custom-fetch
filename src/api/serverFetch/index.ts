@@ -7,9 +7,6 @@ import rollbarLogger from '@/lib/rollbarLogger';
 const Fetch = new FetchInstance({
   baseUrl: 'http://localhost:4000',
   interceptors: {
-    onRequest: (config) => {
-      return config;
-    },
     onResponse: async (response) => {
       return response;
     },
@@ -31,9 +28,6 @@ const Fetch = new FetchInstance({
         throw error;
       }
       throw error;
-    },
-    onRequestError: (reason) => {
-      throw reason;
     }
   }
 });

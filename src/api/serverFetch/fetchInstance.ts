@@ -5,16 +5,14 @@ import {
   UnExpectedServerError
 } from '@/api/serverFetch/types/errorInstance';
 
-const NO_RESPONSE_ERR_MSG = '응답이 없습니다. 네트워크 문제 또는 요청 오류가 있을 수 있습니다.';
-
 interface Interceptor {
   // 응답 요청 전에 config를 가로채서 수정을 한다.
-  onRequest?: (config: FetchOptions) => FetchOptions;
+  onModifyConfig?: (config: FetchOptions) => FetchOptions;
+  // config 변환과정 에러가 발생했을때 실행된다.
+  onConfigError?: (reason: any) => any | Promise<any>;
   // fetch실행 후 응답을 가로챈뒤 응답을 반환한다.
   onResponse?: (response: Response) => Response | PromiseLike<Response>;
   // fetch실행 후 과정에서 에러가 발생했을때 실행된다.
-  onRequestError?: (reason: any) => any | Promise<any>;
-  // config 변환과정 및 fetch 자체에서 에러가 발생했을때 실행된다.
   onResponseError?: (reason: any) => any | Promise<any>;
 }
 
@@ -62,31 +60,22 @@ class ExecuteFetchClass {
     combinedOptions: FetchOptions,
     interceptor?: Interceptor
   ): Promise<Response> {
-    // 요청 인터셉터 처리
-    const interceptedConfig = interceptor?.onRequest ? interceptor.onRequest(combinedOptions) : combinedOptions;
+    const interceptedConfig = interceptor?.onModifyConfig
+      ? interceptor.onModifyConfig(combinedOptions)
+      : combinedOptions;
 
-    const response = await fetch(url, interceptedConfig).catch((error) => {
-      // 요청 에러 인터셉터 처리
-      // TODO: onRequestError 인터셉터 자리 여기에 둘지 아니면 위에 fetch에서 catch로 둘지 고민해보기
-      if (interceptor?.onRequestError) {
-        // TODO: throw할지 return시킬지 고민해보기
-        throw interceptor.onRequestError(error);
-      }
-      throw error;
-    });
+    if (interceptor?.onConfigError) {
+      interceptor.onConfigError(interceptedConfig);
+    }
 
-    // 응답 인터셉터 처리
+    const response = await fetch(url, interceptedConfig);
+
     return interceptor?.onResponse ? await interceptor.onResponse(response) : response;
   }
 }
 
 class EvaluateResponseClass {
   static async makeErrorInstance(response: Response, options: FetchOptions): Promise<Error> {
-    // TODO: fetch API에선 response가 없는 경우가 있는지 확인 필요 없으면 제거(현재까진 무조건 있는걸로 알고있음)
-    if (!response) {
-      return new NoResponseError(NO_RESPONSE_ERR_MSG, options);
-    }
-
     if (response.status >= 500) {
       const contentType = response.headers.get('Content-Type');
       const isJson = contentType?.includes('application/json');
