@@ -4,12 +4,13 @@ import { getDetailServer } from '@/api/detail/server';
 
 export default async function DetailPage({ params }: { params: { storename: string } }) {
   try {
-    // const data = await getDetailServer(params.storename);
+    const data = await getDetailServer(params.storename);
+    console.log(data);
     // const data = await getDetailFetch(params.storename);
     // const { storename } = params;
     return (
       <Suspense fallback={<div>data loading....</div>}>
-        <DetailView data={null} storename={params.storename} />
+        <DetailView data={data} storename={params.storename} />
       </Suspense>
     );
   } catch (err) {

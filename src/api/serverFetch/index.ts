@@ -13,7 +13,7 @@ const rollbar = new Rollbar({
 });
 
 const Fetch = new FetchInstance({
-  baseUrl: 'http://localhost:4000/detail',
+  baseUrl: 'http://localhost:4000',
   interceptors: {
     onRequest: (config) => {
       return config;
@@ -30,7 +30,6 @@ const Fetch = new FetchInstance({
         });
         notFound();
       }
-
       if (error instanceof ServerInternalError) {
         rollbar.error(error.message, error, {
           request: error.request,
@@ -39,7 +38,6 @@ const Fetch = new FetchInstance({
         });
         throw error;
       }
-
       throw error;
     },
     onRequestError: (reason) => {

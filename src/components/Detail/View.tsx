@@ -15,19 +15,19 @@ export default function DetailView(props: DetailViewProps) {
   const { data } = props;
 
   // const clientData = useGetRoot({ storename: props.storename ?? '' });
-  useEffect(() => {
-    const fetchData = async () => {
-      if (props.storename) {
-        const clientData = await getDetailClient(props.storename);
-        setAxiosData(clientData.data);
-      }
-    };
-    fetchData();
-  }, [props.storename]);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     if (props.storename) {
+  //       const clientData = await getDetailClient(props.storename);
+  //       setAxiosData(clientData.data);
+  //     }
+  //   };
+  //   fetchData();
+  // }, [props.storename]);
 
   return (
     <div>
-      {data ? (
+      {data && (
         <div>
           <div>
             data is: <br /> {JSON.stringify(data)}
@@ -36,7 +36,8 @@ export default function DetailView(props: DetailViewProps) {
           <br />
           {/* <div>geoahsh is: {data.geohash}</div> */}
         </div>
-      ) : axiosData ? (
+      )}
+      {axiosData && (
         <div>
           <div>
             axiosData is: <br /> {JSON.stringify(axiosData)}
@@ -45,8 +46,6 @@ export default function DetailView(props: DetailViewProps) {
           <br />
           {/* <div>geoahsh is: {clientData.geohash}</div> */}
         </div>
-      ) : (
-        <div>loading....</div>
       )}
     </div>
   );

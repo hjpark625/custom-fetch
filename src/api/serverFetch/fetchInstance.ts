@@ -18,6 +18,7 @@ interface Interceptor {
   // config 변환과정 및 fetch 자체에서 에러가 발생했을때 실행된다.
   onResponseError?: (reason: any) => any | Promise<any>;
 }
+
 export interface FetchOptions extends RequestInit {
   params?: {
     [key: string]: string | number;
@@ -26,38 +27,9 @@ export interface FetchOptions extends RequestInit {
   interceptor?: Interceptor;
 }
 
-class FetchInstance {
-  private baseUrl: string;
-  private interceptors?: Interceptor;
-
-  constructor({ baseUrl, interceptors }: { baseUrl: string; interceptors?: Interceptor }) {
-    this.baseUrl = baseUrl;
-    this.interceptors = interceptors;
-  }
-
-  // TODO: server component에서 fetch 에러가 발생했을때 정의된 error ui 표출 필요
-  private async errorHandler(res: Response, options: FetchOptions) {
-    // TODO: fetch API에선 response가 없는 경우가 있는지 확인 필요 없으면 제거(현재까진 무조건 있는걸로 알고있음)
-    if (!res) {
-      return new NoResponseError(NO_RESPONSE_ERR_MSG, options);
-    }
-
-    if (res.status >= 500) {
-      const contentType = res.headers.get('Content-Type');
-      const isJson = contentType?.includes('application/json');
-
-      if (res.status === 500 && isJson) {
-        return new ServerInternalError(res.status, JSON.parse(await res.text()).detail.message, res, options);
-      } else {
-        return new UnExpectedServerError(res.status, res.statusText, res, options);
-      }
-    } else if (res.status >= 400) {
-      return new ClientRequestError(res.status, JSON.parse(await res.text()).detail.message, res, options);
-    }
-  }
-
-  private makeUrl(endPoint: string, params?: FetchOptions['params']): string {
-    const url = new URL(`${this.baseUrl}${endPoint}`);
+class PrepareFetchClass {
+  static makeUrl(baseUrl: string, endPoint: string, params: FetchOptions['params']): string {
+    const url = new URL(`${baseUrl}${endPoint}`);
 
     if (params === undefined) return url.toString();
 
@@ -66,7 +38,7 @@ class FetchInstance {
     return url.toString();
   }
 
-  private makeOptions(options: FetchOptions): FetchOptions {
+  static makeOptions(options: FetchOptions): FetchOptions {
     const defaultOptions: FetchOptions = {
       headers: {
         'Content-Type': 'application/json'
@@ -83,59 +55,113 @@ class FetchInstance {
 
     return combinedOptions;
   }
+}
 
-  // TODO: 여기 커링함수로 클래스 내에서 어떻게 구현할지 각 잡아보기
-  private async fetching(endPoint: string, options: FetchOptions) {
-    const combinedOptions = this.makeOptions(options);
-    const url = this.makeUrl(endPoint, combinedOptions.params);
+class ExecuteFetchClass {
+  static async requestWithInterceptors(
+    url: string,
+    combinedOptions: FetchOptions,
+    interceptor?: Interceptor
+  ): Promise<Response> {
+    // 요청 인터셉터 처리
+    const interceptedConfig = interceptor?.onRequest ? interceptor.onRequest(combinedOptions) : combinedOptions;
 
-    try {
-      const interceptedConfig =
-        this.interceptors && this.interceptors.onRequest
-          ? this.interceptors.onRequest(combinedOptions)
-          : combinedOptions;
-
-      // if (this.interceptors && this.interceptors.onRequestError) {
-      //   return await this.interceptors.onRequestError(e);
-      // }
-
-      const response = await fetch(url, interceptedConfig);
-
-      const loggingOptions = {
-        ...interceptedConfig,
-        url: response.url,
-        body: await response.clone().json(),
-        statusText: response.statusText
-      };
-
-      if (this.interceptors && this.interceptors.onResponse) {
-        await this.interceptors.onResponse(response);
+    const response = await fetch(url, interceptedConfig).catch((error) => {
+      // 요청 에러 인터셉터 처리
+      // TODO: onRequestError 인터셉터 자리 여기에 둘지 아니면 위에 fetch에서 catch로 둘지 고민해보기
+      if (interceptor?.onRequestError) {
+        // TODO: throw할지 return시킬지 고민해보기
+        throw interceptor.onRequestError(error);
       }
+      throw error;
+    });
 
-      if (response.status >= 400) {
-        const error = await this.errorHandler(response, loggingOptions);
-        if (this.interceptors && this.interceptors.onResponseError) {
-          await this.interceptors.onResponseError(error);
-        }
-        throw error;
-      }
+    // 응답 인터셉터 처리
+    return interceptor?.onResponse ? await interceptor.onResponse(response) : response;
+  }
+}
 
-      return await response.json();
-    } catch (err: unknown) {
-      throw err;
+class EvaluateResponseClass {
+  static async makeErrorInstance(response: Response, options: FetchOptions): Promise<Error> {
+    // TODO: fetch API에선 response가 없는 경우가 있는지 확인 필요 없으면 제거(현재까진 무조건 있는걸로 알고있음)
+    if (!response) {
+      return new NoResponseError(NO_RESPONSE_ERR_MSG, options);
     }
+
+    if (response.status >= 500) {
+      const contentType = response.headers.get('Content-Type');
+      const isJson = contentType?.includes('application/json');
+
+      if (response.status === 500 && isJson) {
+        return new ServerInternalError(
+          response.status,
+          JSON.parse(await response.text()).detail.message,
+          response,
+          options
+        );
+      } else {
+        return new UnExpectedServerError(response.status, response.statusText, response, options);
+      }
+    } else if (response.status >= 400) {
+      return new ClientRequestError(
+        response.status,
+        JSON.parse(await response.text()).detail.message,
+        response,
+        options
+      );
+    }
+
+    return new Error('Unexpected Error');
   }
 
-  public async get<T = unknown>(endPoint: string, options: FetchOptions) {
-    const data: T = await this.fetching(endPoint, {
+  static async evaluateResponse(response: Response, options: FetchOptions, interceptor?: Interceptor): Promise<any> {
+    const loggingOptions = {
       ...options,
-      method: 'GET'
-    });
+      url: response.url,
+      body: await response.clone().json(),
+      statusText: response.statusText
+    };
+
+    // 에러 처리 로직
+    if (response.status >= 400) {
+      const error = await this.makeErrorInstance(response, loggingOptions);
+      if (interceptor?.onResponseError) {
+        await interceptor.onResponseError(error);
+      }
+      throw error;
+    }
+
+    return response.json();
+  }
+}
+
+class FetchInstance {
+  readonly baseUrl: string;
+  readonly interceptors?: Interceptor;
+
+  constructor({ baseUrl, interceptors }: { baseUrl: string; interceptors?: Interceptor }) {
+    this.baseUrl = baseUrl;
+    this.interceptors = interceptors;
+  }
+
+  private async fetchProcess<T = unknown>(endPoint: string, options: FetchOptions): Promise<T> {
+    const url = PrepareFetchClass.makeUrl(this.baseUrl, endPoint, options.params);
+    const combinedOptions = PrepareFetchClass.makeOptions(options);
+
+    const response = await ExecuteFetchClass.requestWithInterceptors(url, combinedOptions, this.interceptors);
+
+    const data: T = await EvaluateResponseClass.evaluateResponse(response, combinedOptions, this.interceptors);
+
+    return data;
+  }
+
+  public async get<T = unknown>(endPoint: string, options: Omit<FetchOptions, 'interceptor'> = {}): Promise<T> {
+    const data = await this.fetchProcess<T>(endPoint, { ...options, method: 'GET' });
     return data;
   }
 
   // public async post<T = unknown>(endPoint: string, options: FetchOptions) {
-  //   const data: T = await this.fetching(endPoint, {
+  //   const data: T = await this.fetchProcess(endPoint, {
   //     ...options,
   //     method: 'POST'
   //   })
@@ -143,7 +169,7 @@ class FetchInstance {
   // }
 
   // public async put<T = unknown>(endPoint: string, options: FetchOptions) {
-  //   const data: T = await this.fetching(endPoint, {
+  //   const data: T = await this.fetchProcess(endPoint, {
   //     ...options,
   //     method: 'PUT'
   //   })
@@ -151,7 +177,7 @@ class FetchInstance {
   // }
 
   // public async delete<T = unknown>(endPoint: string, options: FetchOptions) {
-  //   const data: T = await this.fetching(endPoint, {
+  //   const data: T = await this.fetchProcess(endPoint, {
   //     ...options,
   //     method: 'DELETE'
   //   })

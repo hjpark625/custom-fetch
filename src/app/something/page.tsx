@@ -1,4 +1,4 @@
-import { getError } from '@/api/serverFetch';
+import { getError } from '@/api/detail/server';
 
 export default async function SomethingPage() {
   try {
