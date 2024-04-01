@@ -1,5 +1,10 @@
 import 'server-only';
-import { ApiError } from 'next/dist/server/api-utils';
+import {
+  ClientRequestError,
+  NoResponseError,
+  ServerInternalError,
+  UnExpectedServerError
+} from '@/api/serverFetch/types/errorInstance';
 
 const NO_RESPONSE_ERR_MSG = '응답이 없습니다. 네트워크 문제 또는 요청 오류가 있을 수 있습니다.';
 
@@ -19,47 +24,6 @@ export interface FetchOptions extends RequestInit {
   };
   body?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   interceptor?: Interceptor;
-}
-
-export class NoResponseError extends Error {
-  request?: FetchOptions;
-  constructor(message: string, options?: FetchOptions) {
-    super(message);
-    this.request = options;
-  }
-}
-
-export class ClientRequestError extends ApiError {
-  response!: Response;
-  request?: FetchOptions;
-  constructor(statusCode: number, message: string, response: Response, request?: FetchOptions) {
-    super(statusCode, message);
-    this.name = this.constructor.name;
-    this.response = response;
-    this.request = request;
-  }
-}
-
-export class ServerInternalError extends ApiError {
-  response!: Response;
-  request?: FetchOptions;
-  constructor(statusCode: number, message: string, response: Response, request?: FetchOptions) {
-    super(statusCode, message);
-    this.name = this.constructor.name;
-    this.response = response;
-    this.request = request;
-  }
-}
-
-export class UnExpectedServerError extends ApiError {
-  response!: Response;
-  request?: FetchOptions;
-  constructor(statusCode: number, message: string, res: Response, request?: FetchOptions) {
-    super(statusCode, message);
-    this.name = this.constructor.name;
-    this.response = res;
-    this.request = request;
-  }
 }
 
 class FetchInstance {

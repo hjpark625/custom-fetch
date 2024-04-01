@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Rollbar from 'rollbar';
-import FetchInstance, { ClientRequestError, ServerInternalError } from '@/api/serverFetch/fetchInstance';
+import FetchInstance from '@/api/serverFetch/fetchInstance';
+import { ClientRequestError, ServerInternalError } from '@/api/serverFetch/types/errorInstance';
 import packageJson from '../../../package.json';
 
 const rollbar = new Rollbar({
