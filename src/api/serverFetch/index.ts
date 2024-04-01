@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
-import { IDetailData } from '@/utils/fetch_axios';
-import FetchInstance, { ClientRequestError, ServerInternalError } from '@/utils/fetchInstance';
 import Rollbar from 'rollbar';
+import FetchInstance, { ClientRequestError, ServerInternalError } from '@/api/serverFetch/fetchInstance';
 import packageJson from '../../../package.json';
 
 const rollbar = new Rollbar({
@@ -12,10 +11,8 @@ const rollbar = new Rollbar({
   code_version: packageJson.version
 });
 
-const baseUrl = 'http://localhost:4000';
-
-const customFetch = new FetchInstance({
-  baseUrl,
+const Fetch = new FetchInstance({
+  baseUrl: 'http://localhost:4000/detail',
   interceptors: {
     onRequest: (config) => {
       return config;
@@ -39,6 +36,7 @@ const customFetch = new FetchInstance({
           cause: error.cause,
           response: error.response
         });
+        throw error;
       }
 
       throw error;
@@ -49,25 +47,4 @@ const customFetch = new FetchInstance({
   }
 });
 
-export async function getDetail(engName: string) {
-  try {
-    const data = await customFetch.get<IDetailData>(`/detail/${engName}`, {
-      next: {
-        revalidate: 0
-      }
-    });
-
-    return data;
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
-}
-
-export async function getError() {
-  try {
-    await customFetch.get('/test', {});
-  } catch (err) {
-    throw err;
-  }
-}
+export default Fetch;
