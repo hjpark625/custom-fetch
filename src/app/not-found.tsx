@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { headers } from 'next/headers';
 
 export default function NotFoundPage() {
   // const headersList = headers();

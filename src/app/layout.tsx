@@ -20,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <Script
+          id="rollbar-client"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `

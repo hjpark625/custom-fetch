@@ -1,8 +1,8 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 // import { useGetRoot } from '@/hooks/useGetRoot';
 
-import { getDetailClient } from '@/api/detail/client';
+// import { getDetailClient } from '@/api/detail/client';
 import type { IDetailData } from '@/api/serverFetch/types/detailType';
 
 interface DetailViewProps {
@@ -11,7 +11,7 @@ interface DetailViewProps {
 }
 
 export default function DetailView(props: DetailViewProps) {
-  const [axiosData, setAxiosData] = useState<IDetailData | null>(null);
+  // const [axiosData, setAxiosData] = useState<IDetailData | null>(null);
   const { data } = props;
 
   // const clientData = useGetRoot({ storename: props.storename ?? '' });
@@ -35,16 +35,6 @@ export default function DetailView(props: DetailViewProps) {
           <br />
           <br />
           {/* <div>geoahsh is: {data.geohash}</div> */}
-        </div>
-      )}
-      {axiosData && (
-        <div>
-          <div>
-            axiosData is: <br /> {JSON.stringify(axiosData)}
-          </div>
-          <br />
-          <br />
-          {/* <div>geoahsh is: {clientData.geohash}</div> */}
         </div>
       )}
     </div>

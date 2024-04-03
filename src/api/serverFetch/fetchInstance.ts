@@ -1,19 +1,14 @@
-import {
-  ClientRequestError,
-  NoResponseError,
-  ServerInternalError,
-  UnExpectedServerError
-} from '@/api/serverFetch/types/errorInstance';
+import { ClientRequestError, ServerInternalError, UnExpectedServerError } from '@/api/serverFetch/types/errorInstance';
 
 interface Interceptor {
   // 응답 요청 전에 config를 가로채서 수정을 한다.
   onModifyConfig?: (config: FetchOptions) => FetchOptions;
   // config 변환과정 에러가 발생했을때 실행된다.
-  onConfigError?: (reason: any) => any | Promise<any>;
+  onConfigError?: (reason: any) => any | Promise<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   // fetch실행 후 응답을 가로챈뒤 응답을 반환한다.
   onResponse?: (response: Response) => Response | PromiseLike<Response>;
   // fetch실행 후 과정에서 에러가 발생했을때 실행된다.
-  onResponseError?: (reason: any) => any | Promise<any>;
+  onResponseError?: (reason: any) => any | Promise<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export interface FetchOptions extends RequestInit {
@@ -102,6 +97,7 @@ class EvaluateResponseClass {
     return new Error('Unexpected Error');
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async evaluateResponse(response: Response, options: FetchOptions, interceptor?: Interceptor): Promise<any> {
     const loggingOptions = {
       ...options,
