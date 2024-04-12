@@ -1,6 +1,6 @@
 import { ClientRequestError, ServerInternalError, UnExpectedServerError } from '@/api/serverFetch/types/errorInstance';
 
-interface Interceptor {
+export interface Interceptor {
   // 응답 요청 전에 config를 가로채서 수정을 한다.
   onModifyConfig?: (config: FetchOptions) => FetchOptions;
   // config 변환과정 에러가 발생했을때 실행된다.
@@ -19,7 +19,7 @@ export interface FetchOptions extends RequestInit {
   interceptor?: Interceptor;
 }
 
-class PrepareFetchClass {
+export class PrepareFetchClass {
   static makeUrl(baseUrl: string, endPoint: string, params: FetchOptions['params']): string {
     const url = new URL(`${baseUrl}${endPoint}`);
 
@@ -49,7 +49,7 @@ class PrepareFetchClass {
   }
 }
 
-class ExecuteFetchClass {
+export class ExecuteFetchClass {
   static async requestWithInterceptors(
     url: string,
     combinedOptions: FetchOptions,
@@ -69,7 +69,7 @@ class ExecuteFetchClass {
   }
 }
 
-class EvaluateResponseClass {
+export class EvaluateResponseClass {
   static async makeErrorInstance(response: Response, options: FetchOptions): Promise<Error> {
     if (response.status >= 500) {
       const contentType = response.headers.get('Content-Type');
@@ -115,7 +115,7 @@ class EvaluateResponseClass {
       throw error;
     }
 
-    return response.json();
+    return await response.json();
   }
 }
 
