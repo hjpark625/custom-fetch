@@ -1,4 +1,9 @@
-import { ClientRequestError, ServerInternalError, UnExpectedServerError } from '@/api/serverFetch/types/errorInstance';
+import {
+  ClientRequestError,
+  ServerInternalError,
+  UnknownError,
+  UnExpectedServerError
+} from '@/api/serverFetch/types/errorInstance';
 
 export interface Interceptor {
   // 응답 요청 전에 config를 가로채서 수정을 한다.
@@ -94,7 +99,7 @@ export class EvaluateResponseClass {
       );
     }
 
-    return new Error('Unexpected Error');
+    return new UnknownError('Unexpected Error', response, options);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

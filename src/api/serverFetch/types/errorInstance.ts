@@ -9,6 +9,17 @@ export class NoResponseError extends Error {
   }
 }
 
+export class UnknownError extends Error {
+  response!: Response;
+  request?: FetchOptions;
+  constructor(message: string, response: Response, options?: FetchOptions) {
+    super(message);
+    this.name = this.constructor.name;
+    this.response = response;
+    this.request = options;
+  }
+}
+
 export class ClientRequestError extends ApiError {
   response!: Response;
   request?: FetchOptions;
